@@ -15,8 +15,8 @@ Rdm6300 rdmtwo;
 
 #include <SoftwareSerial.h>
 SoftwareSerial wifi(WIFI_RX, WIFI_TX);// (RX, TX)
-SoftwareSerial RFone(RF_ONE_RX, RF_ONE_TX);
-SoftwareSerial RFtwo(RF_TWO_RX, RF_TWO_TX);
+SoftwareSerial RFone(RF_ONE_RX);
+SoftwareSerial RFtwo(RF_TWO_RX);
 
 File keys;
 
