@@ -1,4 +1,4 @@
-//hours spend: 3
+//hours spend: 4
 
 #define WIFI_RX 10
 #define WIFI_TX 11
@@ -9,14 +9,14 @@
 
 #include <string.h>
 
-#include <rdm6300.h>
-Rdm6300 rdmone;
-Rdm6300 rdmtwo;
-
 #include <SoftwareSerial.h>
 SoftwareSerial wifi(WIFI_RX, WIFI_TX);// (RX, TX)
 SoftwareSerial RFone(RF_ONE_RX);
 SoftwareSerial RFtwo(RF_TWO_RX);
+
+#include <RDM6300.h>
+RDM6300<SoftwareSerial> rdmone(&RFone);
+RDM6300<SoftwareSerial> rdmtwo(&RFtwo);
 
 File keys;
 
@@ -36,21 +36,46 @@ void setup(){
     pinMode(LED_TWO, OUTPUT);
     digitalWrite(LED_TWO, LOW);
 }
+
 void loop(){
-    if (rdmone.update()){
-        voit[point][0] = rdmone.get_tag_id();
-        voit[poit][1] = 1;
+    unsigned long long lastID_one;
+    unsigned long long lastID_two;
+    
+    if (rdmone.available()){
+        voit[point][0] = rdmone.read();
+        
+        lastID_one = rdmone.read();
+        
+        for(int i = 0; i<=499; i++){
+            if(lastID_one == voit[i][0]) break;
+        }
+        
+        voit[point][1] = 1;
         voit[point][2] = 0;
+        
         point++
     }
 
-    if (rdmtwo.update()){
-        voit[point][0] = rdmtwo.get_tag_id();
+    if (rdmtwo.available()){
+        voit[point][0] = rdmtwo.read();
+        
+        lastID_two = rdmtwo.read();
+        
+        for(int i = 0; i<=499; i++){
+            if(lastID_two == voit[i][0]) break;
+        }
+        
         voit[poit][1] = 0;
         voit[point][2] = 1;
+        
         point++
     }
     
+    match();
+    
+}
+
+void match(){
     for(int i = 0; i<=499; i++){      
         if(voit[i][1] == 1) totalYES++;
         if(voit[i][2] == 1) totalNO++;
