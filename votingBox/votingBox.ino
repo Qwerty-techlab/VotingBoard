@@ -83,19 +83,22 @@ unsigned int no2 = 0;
 //----------------------------------Index-----------------------------------------------------------------------------------------
 const char index[] PROGMEM = R"rawliteral(
   )rawliteral";
+
+//----------------------------------About-----------------------------------------------------------------------------------------
+const char about[] PROGMEM = R"rawliteral(
+  )rawliteral";
 //================================================================================================================================
 
-
-
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//----------------------------------вывод-переменных-на-сервер--------------------------------------------------------------------
 String processor(const String& var){
-  if(var == ""){
-    return String();
+  if(var == "FIRSTVOIT"){
+    return String(totalYES);
+  }
+  if(var == "SECONDVOIT"){
+    return String(totalNO);
   }
   return String();
 }
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 String outputState() {
     if (digitalRead(output)) {
@@ -108,7 +111,7 @@ String outputState() {
 }
 
 void setup() {
-  //server init
+  //=========================server=init======================================================================
   WiFi.mode(WIFI_AP_STA);
   WiFi.setAutoReconnect(true);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
@@ -118,16 +121,19 @@ void setup() {
   Serial.printf("\nDevice connected to router, ip: %u.%u.%u.%u\n",staIp[0],staIp[1],staIp[2],staIp[3]);
   Serial.printf("\nEnable AP, ssid: %s, ip: %u.%u.%u.%u\n",ssidAP,apIP[0],apIP[1],apIP[2],apIP[3]);
 
-
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  //------------------------Server-pages-init----------------------------------------------------------------
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", index, processor);
   });
-  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/plain", String(temperature).c_str());
+  server.on("/about", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", about, processor);
   });
-//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+  server.on("/firstvoit", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", String(totalYES).c_str());
+  });
+  server.on("/secondvoit", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/plain", String(totalNO).c_str());
+  });
   server.on("/update", HTTP_GET, [](AsyncWebServerRequest* request) {
       String inputMessage;
       String inputParam;
@@ -152,7 +158,8 @@ void setup() {
       });
   
   server.begin();
-
+  //==========================================================================================================
+  
   //(Soft)serial init.
   Serial.begin(9600);
   RFone.begin(9600);
