@@ -1,15 +1,14 @@
 //=============================Settings=================================================
-#define RF_RX 8
-#define RF_TX 9
-
-#define DEBUG 0
+#define RF_RX 13
+#define RF_TX 15
 
 //=============================Libraries================================================
 #include <SoftwareSerial.h>
 SoftwareSerial RF(RF_RX, RF_TX); // (RX, TX)
 
+#include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x3f, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 #include <GyverTimer.h>
 GTimer LCDTimer(MS);
@@ -25,36 +24,24 @@ const char* pass = "12345678";
 AsyncWebServer server(80);
 IPAddress apIP(192, 168, 1, 1);
 
-
 #include <string.h>
-
 //=============================Var======================================================
 int totalYES = 0;
 int totalNO = 0;
 int val = 0;
+int val1 = 0;
 
 //array
 unsigned int point = 0;
-const unsigned int arrSize = 4;
-unsigned int voit[arrSize][3];
-/*
-  |0  |1  |2  |
-  |---|---|---|
-  |Ser|Yes|No |
-*/
+const unsigned int arrSize = 4; //максимальное количество проголосовавших
+unsigned int voit[arrSize];
 unsigned char buffer1[64]; // buffer array for data recieve over serial port
 unsigned char buffer2[64]; // buffer array for data recieve over serial port
 int count1 = 0;            // counter for buffer array
 int count2 = 0;
 boolean is = false;
 
-//RFid temp data var
-unsigned int seria1 = 0;
-unsigned int no1 = 0;
-unsigned int seria2 = 0;
-unsigned int no2 = 0;
-
-//----------------------------------вывод-переменных-на-сервер--------------------------------------------------------------------
+//----------------------------------вывод-переменных-на-сервер------------------------------------------------
 String processor(const String& var) {
   if (var == "FIRSTVOIT") {
     return String(totalYES);
@@ -65,20 +52,6 @@ String processor(const String& var) {
   return String();
 }
 //------------------------------------------------------------------------------------------------------------
-void matching(){
-  for (int i = 0; i < arrSize; ++i) {
-    if (voit[i][1] == 1) totalYES++;
-    if (voit[i][2] == 1) totalNO++;
-  }
-}
-void reboot(){
-  for (int i = 0; i < arrSize; ++i) {
-    voit[i][0] = 0;
-    voit[i][1] = 0;
-    voit[i][2] = 0;
-    point = 0;
- }
-}
 void clearBufferArray1(){
   for (int i=0; i<count1;i++)
     { buffer1[i] = NULL;}                  // clear all index of array with command NULL
@@ -129,31 +102,25 @@ void setup() {
   //==========================================================================================================
   
   //timer init
-  LCDTimer.setInterval(60000);
+  LCDTimer.setInterval(600);
 
   //LCD init.
-  lcd.init();
+  lcd.begin(0,2);  // sda=0, scl=2
   lcd.backlight();
 }
 
 void loop() {
   //-----------------------------------------init-------------------------------------------------------
-
-  no1 = 0;
-  no2 = 0;
-  seria1 = 0;
-  seria2 = 0;
-
   if (LCDTimer.isReady()) {
-    lcd.setCursor(0, 0);
+    lcd.cursor(0, 0);
     lcd.print("YES");
-    lcd.setCursor(1, 0);
-    lcd.print(totalYES + "   ");
+    lcd.cursor(1, 0);
+    lcd.print(totalYES);
 
-    lcd.setCursor(0, 13);
+    lcd.cursor(0, 10);
     lcd.print("NO");
-    lcd.setCursor(1, 13);
-    lcd.print(totalNO + "   ");
+    lcd.cursor(1, 10);
+    lcd.print(totalNO);
   }
   //=========================================RFid=======================================================
   //-----------------------------------------first-rf---------------------------------------------------
@@ -183,22 +150,21 @@ void loop() {
     }
     Serial.print("No: ");
     Serial.println(val);
+    
     if (point == 0) {
-      voit[point][0] = val;
-      voit[point][1] = 1;
-      voit[point][2] = 0;
+      voit[point] = val;
       point++;
+      totalYES++;
     } else {
       for (int i = 0; i < arrSize; ++i) {
-        if (voit[i][0] == val) {
+        if (voit[i] == val) {
           is = true;
         }
       }
       if (!is) {
-        voit[point][0] = val;
-        voit[point][1] = 1;
-        voit[point][2] = 0;
+        voit[point] = val;
         point++;
+        totalYES++;
       }
     }
     is = false;
@@ -217,53 +183,45 @@ void loop() {
     Serial.write(buffer2, count2);           // if no data transmission ends, write buffer to hardware serial port
     //Переводим полученное от RFID из буфера 5-7 байты шестнацатеричного числа в десятичное число
     //Шестнадцатеричные числа представлены цифрами от 0 до 9 и буквами от A(10) до F(15)
-    val = 0;
+    val1 = 0;
     for (int i = 5; i <= 6; i++) {
-      val = val * 16 + (int) (buffer2[i] > '9' ? (buffer2[i] - 'A') + 10 : buffer2[i] - '0');
+      val1 = val1 * 16 + (int) (buffer2[i] > '9' ? (buffer2[i] - 'A') + 10 : buffer2[i] - '0');
     }
     Serial.println("");
     Serial.print("Seria: ");
-    Serial.println(val);
+    Serial.println(val1);
     //Переводим полученное от RFID из буфера 7-10 байты шестнацатеричного числа в десятичное число
     //Шестнадцатеричные числа представлены цифрами от 0 до 9 и буквами от A(10) до F(15)
-    val = 0;
+    val1 = 0;
     for (int i = 7; i <= 10; i++) {
-      val = val * 16 + (int) (buffer2[i] > '9' ? (buffer2[i] - 'A') + 10 : buffer2[i] - '0');
+      val1 = val1 * 16 + (int) (buffer2[i] > '9' ? (buffer2[i] - 'A') + 10 : buffer2[i] - '0');
     }
     Serial.print("No: ");
-    Serial.println(val);
+    Serial.println(val1);
     if (point == 0) {
-      voit[point][0] = val;
-      voit[point][1] = 0;
-      voit[point][2] = 1;
+      voit[point] = val1;
       point++;
+      totalNO++;
     } else {
       for (int i = 0; i < arrSize; ++i) {
-        if (voit[i][0] == val) {
+        if (voit[i] == val1) {
           is = true;
         }
       }
       if (!is) {
-        voit[point][0] = val;
-        voit[point][1] = 0;
-        voit[point][2] = 1;
+        voit[point] = val1;
         point++;
+        totalNO++;
       }
     }
-
+    is = false;
     clearBufferArray2();              // call clearBufferArray function to clear the storaged data from the array
     count2 = 0;                       // set counter of while loop to zero
   }
   //====================================================================================================
-
+  
   for (int i = 0; i < arrSize; ++i) {
     Serial.println("---------------");
-    Serial.print(voit[i][0]);
-    Serial.print(" ");
-    Serial.print(voit[i][1]);
-    Serial.print(" ");
-    Serial.print(voit[i][2]);
-  }
-  
-  matching();
+    Serial.print(voit[i]);
+  } 
 }
