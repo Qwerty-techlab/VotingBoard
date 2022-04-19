@@ -67,14 +67,15 @@ void setup() {
   //(Soft)serial init.
   Serial.begin(9600);
   RF.begin(9600);
-  
+  // initialize the lcd 
+  lcd.init();
+  lcd.backlight();  
   WiFi.softAP(ssid, pass); //Добавьте(сотрите) параметр pass, если хотите, чтобы точка доступа была закрытой(открытой)
   //IP addres
   Serial.print("AP IP адрес: ");
   Serial.println(WiFi.softAPIP());
   // Выводим локальный IP
-  Serial.println(WiFi.localIP());
-    
+  Serial.println(WiFi.localIP());   
   if(!LittleFS.begin()){
     Serial.println("An Error has occurred while mounting LittleFS");
     return;
@@ -112,14 +113,14 @@ void setup() {
 void loop() {
   //-----------------------------------------init-------------------------------------------------------
   if (LCDTimer.isReady()) {
-    lcd.cursor(0, 0);
+    lcd.setCursor(0,0);
     lcd.print("YES");
-    lcd.cursor(1, 0);
+    lcd.setCursor(0,1);
     lcd.print(totalYES);
 
-    lcd.cursor(0, 10);
+    lcd.setCursor(13,0);
     lcd.print("NO");
-    lcd.cursor(1, 10);
+    lcd.setCursor(13,1);
     lcd.print(totalNO);
   }
   //=========================================RFid=======================================================
