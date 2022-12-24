@@ -10,7 +10,7 @@
   <li>ESP8266AsyncWebServer</li>
   <li>Esp8266TCP</li>
   <li>LittleFS</li>
-  <li>LCD-I2С (Искать работающую с ESP9266)</li>
+  <li>LCD-I2С (Искать работающую с ESP8266)</li>
 </ul>
 
 <p> Папку "data" необходимо загрузить в файловую систему LittleFS (https://zen.yandex.ru/media/esp32/ustanovka-zagruzchika-failovoi-sistemy-littlefs-esp8266-v-srede-arduino-ide-628900cfbd4b132054a3e0fd)</p>
