@@ -5,7 +5,7 @@
 </p>
 </br>
 
-<h2>Librariess</h2>
+<h2>Libraries</h2>
 <ul>
   <li>ESP8266AsyncWebServer</li>
   <li>Esp8266TCP</li>
